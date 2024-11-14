@@ -1,42 +1,42 @@
 function init(){
 
-    function getRandomCoordinate(min, max){
-        return Math.random() * (max - min) + min ;
+    // initialisation de leaflet
+    const map = L.map('map').setView([43.45, 5.45], 11);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // générer des coordonnées aléatoires
+    function getRandomCoordinate(min, max) {
+        return Math.random() * (max - min) + min;
     }
 
-    // Générer des points aléatoires
+    // générer des points aléatoires
     function generateRandomPoints(numPoints) {
         const points = [];
-        for(let i = 0; i < numPoints; i++){
+        for (let i = 0; i < numPoints; i++) {
             points.push({
                 name: `Point ${i + 1}`,
-                lat : getRandomCoordinate(43.30, 43.60),
-                lon: getRandomCoordinate(5.20,5.70)
-            })
+                lat: getRandomCoordinate(43.30, 43.60),
+                lon: getRandomCoordinate(5.20, 5.70)
+            });
         }
-
         return points;
     }
 
-    // Générer les points aléatoires
     const points = generateRandomPoints(8);
-    
 
-    // Initialisation de la carte
-    const zoomLevel = 7;
-
-    const map = L.map('map').setView([points[0].lat, points[0].lon], zoomLevel);
-
-    const mainLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    // afficher un markeur pour chaque point
+    points.forEach(point => {
+        L.marker([point.lat, point.lon]).addTo(map)
+            .bindPopup(point.name)
+            .openPopup();
     });
 
-    mainLayer.addTo(map);
-
-
-    // calculer la distance en ligne droite entre 2 points
-    function calculateDistance(lat1, lon1, lat2, lon2) {
+     // Fonction de calcul de distance en coordonnées géographiques
+     function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371; // Rayon de la Terre en km
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -47,13 +47,10 @@ function init(){
         return R * c;
     }
 
-
     // Algorithme pour trouver le parcours optimisé
     function findOptimizedRoute(points) {
         const visited = new Set();
         const route = [];
-
-        // Choisir un point de départ, par exemple le premier
         let currentPoint = points[0];
         route.push(currentPoint);
         visited.add(currentPoint.name);
@@ -62,53 +59,60 @@ function init(){
             let closestPoint = null;
             let shortestDistance = Infinity;
 
-            // Chercher le point le plus proche qui n'a pas encore été visité
             points.forEach(point => {
                 if(!visited.has(point.name)) {
-                    // pour chaque point non visité
-
-                    // on calcule la distance
                     const distance = calculateDistance(
                         currentPoint.lat, 
                         currentPoint.lon, 
                         point.lat, 
                         point.lon
                     );
-
-                    // on garde la distance qui est la plus courte
                     if(distance < shortestDistance) {
                         shortestDistance = distance;
                         closestPoint = point;
                     }
                 }
-            })
+            });
 
-            // Ajouter le point le plus proche à l'itinéraire et le marquer comme visité
             route.push(closestPoint);
             visited.add(closestPoint.name);
             currentPoint = closestPoint;
         }
 
-        // Boucler le polygone en revenant au point de départ
+        // Boucler en revenant au point de départ
         route.push(route[0]);
 
         return route;
     }
 
-    // Calculer le trajet optimisé
     const optimizedRoute = findOptimizedRoute(points);
-    console.log(optimizedRoute);
 
-    // Tracer le polygone sur la carte
-    const polygonCoords = optimizedRoute.map(point => [point.lat, point.lon]);
+    // Fonction pour afficher l'itinéraire segment par segment
+    async function displayRoute(route) {
+        for (let i = 0; i < route.length - 1; i++) {
+            const start = route[i];
+            const end = route[i + 1];
+            const url = `https://router.project-osrm.org/route/v1/driving/${start.lon},${start.lat};${end.lon},${end.lat}?geometries=geojson&overview=full`;
 
-    L.polygon(polygonCoords).addTo(map);
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
 
-    // Marqueurs pour chaque point
-    optimizedRoute.forEach(point => {
-        L.marker([point.lat, point.lon]).addTo(map)
-            .bindPopup(point.name)
-            .openPopup();
-    });
+                if (data && data.routes && data.routes.length > 0) {
+                    const segment = data.routes[0].geometry.coordinates;
+                    const latLngs = segment.map(coord => [coord[1], coord[0]]);
 
+                    // Afficher le segment de route sur la carte
+                    L.polyline(latLngs, { color: 'blue', weight: 4 }).addTo(map);
+                } else {
+                    console.log("Aucun segment d'itinéraire trouvé.");
+                }
+            } catch (error) {
+                console.error("Erreur lors de la récupération de l'itinéraire:", error);
+            }
+        }
+    }
+
+    // Afficher l'itinéraire optimisé
+    displayRoute(optimizedRoute);
 }
