@@ -94,6 +94,25 @@ function init(){
     }
 
     const optimizedRoute = findOptimizedRoute(points);
+    console.log(optimizedRoute);
+
+    function displayTripCity(points){
+        var div = document.getElementById('trip');
+        var ul = document.createElement("ul"); 
+
+        div.appendChild(ul);
+
+        points.forEach(point => {
+            var li = document.createElement("li");
+            ul.appendChild(li);
+            li.textContent = point.name
+        })
+
+        console.log(div);
+    }
+
+    displayTripCity(optimizedRoute);
+    
 
     // Fonction pour afficher l'itinéraire segment par segment
     async function displayRoute(route) {
