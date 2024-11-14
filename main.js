@@ -30,14 +30,29 @@ function init(){
 
     // Icône personnalisé pour le premier point
     const startIcon = L.AwesomeMarkers.icon({
-        icon: 'play', // Choix de l'icône
-        markerColor: 'red', // Couleur du marqueur
-        prefix: 'fa' // Utilisation de Font Awesome
+        icon: 'play', 
+        markerColor: 'red', 
+        prefix: 'fa'
       });
 
     // afficher un markeur pour chaque point
     points.forEach((point, index) => {
-        const markerOptions = index === 0 ? { icon: startIcon } : {}; // Icône spéciale pour le premier point
+        number = index + 1;
+
+        const markerOptions = index === 0 ? { 
+            icon: L.AwesomeMarkers.icon({
+                icon: 'play', 
+                markerColor: 'red', 
+                prefix: 'fa'
+                }) 
+            } : { 
+            icon: L.AwesomeMarkers.icon({
+                icon: index.toString(), 
+                markerColor: 'blue', 
+                prefix: 'fa'
+                }) 
+            }; 
+
         L.marker([point.lat, point.lon], markerOptions).addTo(map)
         .bindPopup(point.name)
         .openPopup();
