@@ -28,11 +28,19 @@ function init(){
 
     const points = generateRandomPoints(8);
 
+    // Icône personnalisé pour le premier point
+    const startIcon = L.AwesomeMarkers.icon({
+        icon: 'play', // Choix de l'icône
+        markerColor: 'red', // Couleur du marqueur
+        prefix: 'fa' // Utilisation de Font Awesome
+      });
+
     // afficher un markeur pour chaque point
-    points.forEach(point => {
-        L.marker([point.lat, point.lon]).addTo(map)
-            .bindPopup(point.name)
-            .openPopup();
+    points.forEach((point, index) => {
+        const markerOptions = index === 0 ? { icon: startIcon } : {}; // Icône spéciale pour le premier point
+        L.marker([point.lat, point.lon], markerOptions).addTo(map)
+        .bindPopup(point.name)
+        .openPopup();
     });
 
      // Fonction de calcul de distance en coordonnées géographiques
